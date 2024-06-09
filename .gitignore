@@ -1,9 +1,8 @@
-# .gitignore
-
-# Ignore logs
+# Ignore log files and directories
 logs/
 
-# Ignore GCP service account JSON
+# Ignore service account JSON
 gcp/service_account.json
 
-
+# Ignore CSV files if not needed in the repo
+*.csv
