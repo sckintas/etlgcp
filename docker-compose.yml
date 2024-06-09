@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:13
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - postgres_db_volume:/var/lib/postgresql/data
+
+  airflow-webserver:
+    image: apache/airflow:2.5.1
+    container_name: airflow-webserver
+    restart: always
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - _AIRFLOW_WWW_USER_USERNAME=admin
+      - _AIRFLOW_WWW_USER_PASSWORD=admin
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp/service_account.json
+    depends_on:
+      - postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./gcp:/opt/airflow/gcp
+      - ./Online_Retail.csv:/opt/airflow/Online_Retail.csv
+      - C:/Users/etlda/airflow_etl/gcp/service_account.json:/opt/airflow/gcp/service_account.json:ro
+    ports:
+      - "8090:8080"
+    command: webserver
+
+  airflow-scheduler:
+    image: apache/airflow:2.5.1
+    container_name: airflow-scheduler
+    restart: always
+    environment:
+      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres/airflow
+      - AIRFLOW__CORE__LOAD_EXAMPLES=False
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/airflow/gcp/service_account.json
+    depends_on:
+      - postgres
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./logs:/opt/airflow/logs
+      - ./plugins:/opt/airflow/plugins
+      - ./gcp:/opt/airflow/gcp
+      - ./Online_Retail.csv:/opt/airflow/Online_Retail.csv
+      - C:/Users/etlda/airflow_etl/gcp/service_account.json:/opt/airflow/gcp/service_account.json:ro
+    command: scheduler
+
+volumes:
+  postgres_db_volume:
