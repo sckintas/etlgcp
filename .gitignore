@@ -6,6 +6,4 @@ logs/
 # Ignore GCP service account JSON
 gcp/service_account.json
 
-# Ignore other system files
-*.pyc
-__pycache__/
+
