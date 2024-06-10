@@ -4,7 +4,7 @@ version: 2
 
 sources:
   - name: retail
-    database: airflowetl-425915 # Put the project id!
+    database: airflowetl-426020
 
     tables:
       - name: raw_invoices
