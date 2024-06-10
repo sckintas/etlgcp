@@ -35,7 +35,7 @@ services:
     ports:
       - "8090:8080"
     command: >
-      bash -c "airflow db init && airflow webserver"
+      bash -c "airflow db init && airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com && airflow webserver"
 
   airflow-scheduler:
     build:

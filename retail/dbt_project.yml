@@ -18,4 +18,4 @@ clean-targets:
 models:
   retail:
     transform:
-      +materialized: view
+      +materialized: table

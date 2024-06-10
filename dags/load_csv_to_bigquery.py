@@ -1,9 +1,13 @@
+import os
 from airflow import DAG
+from airflow.operators.python_operator import PythonOperator
 from airflow.operators.bash_operator import BashOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateEmptyDatasetOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateEmptyTableOperator
+from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 from airflow.utils.dates import days_ago
+from google.cloud import storage
 
 default_args = {
     'owner': 'airflow',
@@ -22,9 +26,29 @@ dag = DAG(
     catchup=False,
 )
 
-upload_to_gcs = BashOperator(
+def upload_to_gcs():
+    key_path = '/opt/airflow/gcp/service_account.json'
+    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
+    
+    client = storage.Client()
+    bucket_name = 'new_retail'  # Ensure this is the correct bucket name
+    destination_blob_name = 'Online_Retail.csv'
+    source_file_name = '/opt/airflow/Online_Retail.csv'
+    
+    bucket = client.bucket(bucket_name)
+    blob = bucket.blob(destination_blob_name)
+    blob.upload_from_filename(source_file_name)
+    
+    print(f"File {source_file_name} uploaded to {bucket_name}/{destination_blob_name}.")
+
+def read_sql_file():
+    with open('/opt/airflow/dags/country.sql', 'r') as file:
+        sql_content = file.read()
+    return sql_content
+
+upload_to_gcs_task = PythonOperator(
     task_id='upload_to_gcs',
-    bash_command='python /opt/airflow/dags/load_csv_to_bigquery.py',
+    python_callable=upload_to_gcs,
     dag=dag,
 )
 
@@ -55,13 +79,25 @@ create_retail_table = BigQueryCreateEmptyTableOperator(
 
 gcs_to_bigquery = GCSToBigQueryOperator(
     task_id='gcs_to_bigquery',
-    bucket='airflowdbt',
+    bucket='new_retail',  # Ensure this matches the bucket used in upload_to_gcs
     source_objects=['Online_Retail.csv'],
-    destination_project_dataset_table='airflowetl-425915.retail.raw_invoices',
+    destination_project_dataset_table='airflowetl-426020.retail.raw_invoices',
     skip_leading_rows=1,
     source_format='CSV',
     write_disposition='WRITE_TRUNCATE',
     field_delimiter=',',
+    gcp_conn_id='gcp',
+    dag=dag,
+)
+
+create_country_table = BigQueryInsertJobOperator(
+    task_id='create_country_table',
+    configuration={
+        "query": {
+            "query": read_sql_file(),
+            "useLegacySql": False,
+        }
+    },
     gcp_conn_id='gcp',
     dag=dag,
 )
@@ -72,4 +108,4 @@ run_dbt_models = BashOperator(
     dag=dag,
 )
 
-upload_to_gcs >> create_retail_dataset >> create_retail_table >> gcs_to_bigquery >> run_dbt_models
+upload_to_gcs_task >> create_retail_dataset >> create_retail_table >> gcs_to_bigquery >> create_country_table >> run_dbt_models

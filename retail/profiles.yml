@@ -4,7 +4,7 @@ retail:
     dev:
       type: bigquery
       method: service-account
-      project: airflowetl-425915  
+      project: airflowetl-426020  
       dataset: retail             
       keyfile: C:/Users/etlda/airflow_etl/gcp/service_account.json 
       threads: 1
