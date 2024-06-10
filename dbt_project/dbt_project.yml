@@ -1,0 +1,7 @@
+name: 'retail_dataset'
+
+profile: 'retail_dataset'
+
+models:
+  retail:
+    materialized: table

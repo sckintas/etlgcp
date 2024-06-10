@@ -1,0 +1,13 @@
+airflow:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: airflowetl-425915
+      dataset: retail-dataset
+      threads: 1
+      keyfile: /opt/airflow/gcp/service_account.json
+      timeout_seconds: 300
+      location: US
+      priority: interactive

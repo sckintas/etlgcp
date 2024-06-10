@@ -1,0 +1,10 @@
+
+# sources.yml
+version: 2
+
+sources:
+  - name: 'retail_dataset'
+    database: airflowetl-425915 # Put the project id!
+
+    tables:
+      - name: raw_invoices

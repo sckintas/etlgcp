@@ -19,7 +19,10 @@ COPY Online_Retail.csv /opt/airflow/
 # Copy service account key
 COPY gcp/service_account.json /opt/airflow/gcp/service_account.json
 
-# Install Python dependencies
-RUN pip install apache-airflow[gcp] google-cloud-bigquery pandas psycopg2-binary sqlalchemy<2.0
+# Install Python dependencies and dbt
+RUN pip install apache-airflow[gcp] google-cloud-bigquery pandas psycopg2-binary sqlalchemy<2.0 dbt-bigquery
 
+USER airflow
 
+# Copy dbt project files
+COPY dbt_project /dbt

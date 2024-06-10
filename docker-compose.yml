@@ -29,7 +29,7 @@ services:
       - ./plugins:/opt/airflow/plugins
       - ./gcp:/opt/airflow/gcp
       - ./Online_Retail.csv:/opt/airflow/Online_Retail.csv
-      - C:/Users/etlda/airflow_etl/gcp/service_account.json:/opt/airflow/gcp/service_account.json:ro
+      - ./dbt_project:/dbt
     ports:
       - "8090:8080"
     command: webserver
@@ -51,7 +51,7 @@ services:
       - ./plugins:/opt/airflow/plugins
       - ./gcp:/opt/airflow/gcp
       - ./Online_Retail.csv:/opt/airflow/Online_Retail.csv
-      - C:/Users/etlda/airflow_etl/gcp/service_account.json:/opt/airflow/gcp/service_account.json:ro
+      - ./dbt_project:/dbt
     command: scheduler
 
 volumes:
