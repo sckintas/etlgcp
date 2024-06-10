@@ -11,7 +11,9 @@ services:
       - postgres_db_volume:/var/lib/postgresql/data
 
   airflow-webserver:
-    image: apache/airflow:2.5.1
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: airflow-webserver
     restart: always
     environment:
@@ -29,13 +31,16 @@ services:
       - ./plugins:/opt/airflow/plugins
       - ./gcp:/opt/airflow/gcp
       - ./Online_Retail.csv:/opt/airflow/Online_Retail.csv
-      - ./dbt_project:/dbt
+      - ./retail:/opt/airflow/dbt/retail
     ports:
       - "8090:8080"
-    command: webserver
+    command: >
+      bash -c "airflow db init && airflow webserver"
 
   airflow-scheduler:
-    image: apache/airflow:2.5.1
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: airflow-scheduler
     restart: always
     environment:
@@ -51,7 +56,7 @@ services:
       - ./plugins:/opt/airflow/plugins
       - ./gcp:/opt/airflow/gcp
       - ./Online_Retail.csv:/opt/airflow/Online_Retail.csv
-      - ./dbt_project:/dbt
+      - ./retail:/opt/airflow/dbt/retail
     command: scheduler
 
 volumes:

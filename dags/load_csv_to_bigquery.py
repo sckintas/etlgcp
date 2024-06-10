@@ -1,12 +1,9 @@
 from airflow import DAG
-from airflow.operators.python_operator import PythonOperator
+from airflow.operators.bash_operator import BashOperator
 from airflow.providers.google.cloud.transfers.gcs_to_bigquery import GCSToBigQueryOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateEmptyDatasetOperator
 from airflow.providers.google.cloud.operators.bigquery import BigQueryCreateEmptyTableOperator
-from airflow.providers.google.cloud.operators.bigquery import BigQueryInsertJobOperator
 from airflow.utils.dates import days_ago
-from google.cloud import storage
-import os
 
 default_args = {
     'owner': 'airflow',
@@ -17,46 +14,17 @@ default_args = {
 }
 
 dag = DAG(
-    'upload_to_gcs_and_load_to_bigquery',
+    'upload_to_gcs_and_load_to_bigquery_with_dbt',
     default_args=default_args,
-    description='Upload CSV to GCS and load to BigQuery',
+    description='Upload CSV to GCS, load to BigQuery, and run DBT models',
     schedule_interval=None,
     start_date=days_ago(1),
     catchup=False,
 )
 
-def upload_to_gcs():
-    key_path = '/opt/airflow/gcp/service_account.json'
-    os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = key_path
-    
-    client = storage.Client()
-    bucket_name = 'airflowdbt'
-    destination_blob_name = 'Online_Retail.csv'
-    source_file_name = '/opt/airflow/Online_Retail.csv'
-    
-    bucket = client.get_bucket(bucket_name)
-    blob = bucket.blob(destination_blob_name)
-    blob.upload_from_filename(source_file_name)
-    
-    print(f"File {source_file_name} uploaded to {bucket_name}/{destination_blob_name}.")
-
-def execute_sql():
-    sql_path = '/opt/airflow/dags/country.sql'  # Adjusted path to be in the dags folder
-    if not os.path.exists(sql_path):
-        raise FileNotFoundError(f"The file {sql_path} does not exist.")
-    with open(sql_path, 'r') as file:
-        sql_content = file.read()
-    
-    from google.cloud import bigquery
-    client = bigquery.Client()
-    query_job = client.query(sql_content)
-    query_job.result()  # Wait for the job to complete.
-
-    print("SQL query executed successfully.")
-
-upload_to_gcs_task = PythonOperator(
+upload_to_gcs = BashOperator(
     task_id='upload_to_gcs',
-    python_callable=upload_to_gcs,
+    bash_command='python /opt/airflow/dags/load_csv_to_bigquery.py',
     dag=dag,
 )
 
@@ -85,7 +53,7 @@ create_retail_table = BigQueryCreateEmptyTableOperator(
     dag=dag,
 )
 
-gcs_to_bigquery_task = GCSToBigQueryOperator(
+gcs_to_bigquery = GCSToBigQueryOperator(
     task_id='gcs_to_bigquery',
     bucket='airflowdbt',
     source_objects=['Online_Retail.csv'],
@@ -94,15 +62,14 @@ gcs_to_bigquery_task = GCSToBigQueryOperator(
     source_format='CSV',
     write_disposition='WRITE_TRUNCATE',
     field_delimiter=',',
-    gcp_conn_id='gcp',  
-    ignore_unknown_values=True,
+    gcp_conn_id='gcp',
     dag=dag,
 )
 
-execute_sql_task = PythonOperator(
-    task_id='execute_sql',
-    python_callable=execute_sql,
+run_dbt_models = BashOperator(
+    task_id='run_dbt_models',
+    bash_command='cd /opt/airflow/dbt/retail && dbt run --profiles-dir /opt/airflow/dbt/retail',
     dag=dag,
 )
 
-upload_to_gcs_task >> create_retail_dataset >> create_retail_table >> gcs_to_bigquery_task >> execute_sql_task
+upload_to_gcs >> create_retail_dataset >> create_retail_table >> gcs_to_bigquery >> run_dbt_models
