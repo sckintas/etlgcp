@@ -1,4 +1,4 @@
-FROM apache/airflow:2.5.1
+FROM apache/airflow:2.5.1-python3.8
 
 USER root
 
@@ -22,7 +22,8 @@ COPY gcp/service_account.json /opt/airflow/gcp/service_account.json
 USER airflow
 
 # Install Python dependencies and dbt
-RUN pip install --user apache-airflow[gcp] google-cloud-bigquery pandas psycopg2-binary "sqlalchemy<2.0" dbt-bigquery
+COPY constraints.txt /
+RUN pip install --user apache-airflow[gcp] google-cloud-bigquery pandas psycopg2-binary "sqlalchemy<2.0" dbt-bigquery -c /constraints.txt
 
 # Copy dbt project files
 COPY retail /opt/airflow/dbt/retail
