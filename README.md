@@ -59,9 +59,13 @@ This project is designed to automate a data pipeline using Airflow, Google Cloud
 │   ├── upload_to_gcs_and_load_to_bigquery_with_dbt.py  # Airflow DAG
 │   ├── country.sql                                    # SQL script for Country table
 │   └── load_csv_to_bigquery.py                        # Additional utility script
-├── Online_Retail.csv                                   # Input CSV file
-├── gcp/
-│   └── service_account.json                           # GCP service account key
+├── .gitignore
+├── Online_Retail.csv
+├── .gitignore
+├── onstraints.txt
+├── docker-compose.yml
+├── dockerfile
+├──requirements.txt                                   # Input CSV file                    
 ├── retail/
 │       ├── dbt_project.yml
 │       ├── profiles.yml
@@ -72,7 +76,7 @@ This project is designed to automate a data pipeline using Airflow, Google Cloud
 │       ├── seeds/
 │       ├── snapshots/
 │       ├── tests/
-│       └── README.md                                  # DBT project README
+│                                
 ```
 
 ## Workflow Configuration
